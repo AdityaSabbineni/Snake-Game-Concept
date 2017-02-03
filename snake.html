@@ -1,0 +1,371 @@
+<html>
+<head>
+<script src="jquery-1.10.2.min.js"></script>
+<style>
+#picture_of_alphabet
+{
+	border-color:#660066;
+}
+#name_of_student
+{
+	font-size:20px;
+	color:white;
+}
+#score_of_player
+{
+	font-size:20px;
+	color:white;
+}
+#time_by_player
+{
+	font-size:20px;
+	color:white;
+}
+#level_of_game
+{
+	font-size:20px;
+	color:white;
+}
+#game_end
+{
+	font-size:40px;
+	color:black;
+}
+
+</style>
+<script>
+	
+$(document).ready(function() 
+{
+	var canvas = $("#canvas")[0];
+	var ctx = canvas.getContext("2d");
+	var length = 5; //Length of the snake
+	var tail;
+	var w_i=0;
+	var head_x=0;
+	var level = 1;
+	var head_y=0;
+	var mins=0;
+	var seconds=0;
+	var dir = "right";
+	var snake_timer;
+	var text_position_x = [];
+	var text_position_y = [];
+	var complete_flag = false;
+	var time_flag = false;
+	var src = "images";
+	var valid_w=new Array();
+	var word = [
+					["A","P","P","L","E"],["B","A","T"],["C","A","T"],["D","O","G"],["E","L","E","P","H","A","N","T"],["F","I","S","H"],
+					["G","I","R","A","F","F","E"],["H","A","T"],["I","C","E"],["J","A","R"],["K","E","Y"],["L","I","O","N"],["M","O","N","K","E","Y"],
+					["N","E","S","T"],["O","W","L"],["P","E","A","C","O","C","K"],["Q","U","E","U","E"],["R","A","B","B","I","T"],["S","N","A","K","E"],
+					["T","I","G","E","R"],["U","M","B","R","E","L","L","A"],["V","A","N"],["W","E","B"],["X","R","A","Y"],["Y","A","K"],["Z","E","B","R","A"]
+				];
+	var y = 0;
+	//var w = new Array();
+	function starting_game()
+	{
+		$("#level_of_game").text("LEVEL : "+level);
+		src = "images/";
+		src = src+level+".jpg";
+		//alert(src);
+		$("#picture_of_alphabet").attr("src", src);
+		mins=0;
+		seconds=0;
+		if(time_flag == false)
+		{
+			$("#time_by_player").text("TIME : "+mins+" min "+":: "+seconds+" secs");
+			time_flag = true;
+			time=setInterval(function()
+			{
+				$("#time_by_player").text("TIME : "+mins+" min "+":: "+seconds+" secs");
+				seconds++;
+				if(seconds>=60)
+				{
+					mins++;
+					seconds=0;
+				}
+			},1000);
+		}
+		text_position_x = [];
+		text_position_y = [];
+		valid_w = [];
+		w_i=0;
+		head_x=-1;
+		head_y=-1;
+		$("#canvas").show();
+		init_game();
+		create_snake();
+		paint_snake();
+	}
+	function redraw_game()
+	{
+		var w = $("#canvas").width();
+		var h = $("#canvas").height();
+		var y=0;
+		var l;
+		
+		//Lets paint the canvas now
+		ctx.fillStyle = "#00FF00";
+		ctx.fillRect(0, 0, w, h);
+		ctx.fillStyle = "blue";
+		ctx.font = "bold 18px Arial";
+		
+		l = word[level-1].length;
+		for(y=0;y<l;y++)
+		{
+			//alert(word[level-1][y]+" "+text_position_x[y]+" "+text_position_y[y]);
+			ctx.fillText(word[level-1][y],text_position_x[y],text_position_y[y]);
+		}
+	}
+	function init_game()
+	{
+		//Canvas stuff
+		var w = $("#canvas").width();
+		var h = $("#canvas").height();
+		var l;
+		var y=0;
+		var num=-1;
+		
+		ctx.fillStyle = "#00FF00";
+		ctx.fillRect(0, 0, w, h);
+		ctx.fillStyle = "blue";
+		ctx.font = "bold 18px Arial";
+		l = word[level-1].length;
+		
+		for(var i=0;i<word[level-1].length;i++)
+		{
+			valid_w[i] = word[level-1][i];
+			//alert(valid_w[i]);
+			
+		}
+		for(y=0;y<l;y++)
+		{
+			do
+			{
+				num = Math.floor((Math.random()*(w-16)));
+				num = num - num%15 ;
+				num = num+15;
+			}while(check_position_x(num) == true);
+			text_position_x[y] = num;
+			do
+			{
+				num = Math.floor((Math.random()*(h-16)));
+				num = num - num%15 ;
+				num = num+15;
+				if((text_position_x[y] < 15)&&(num == 0)) num = num+15;
+				if((text_position_x[y] >=585)&&(num == 0)) num = num+15;
+				if((text_position_x[y] <=75)&&(num <=30)) num = num+30;
+			}while(check_position_y(num) == true);
+			text_position_y[y] = num;	
+			//alert(word[level-1][y]+" "+text_position_x[y]+" "+text_position_y[y]);
+			ctx.fillText(word[level-1][y],text_position_x[y],text_position_y[y]);
+		}
+	}
+	
+	function check_position_x(num)
+	{
+		var i;
+		for(i=0;i<text_position_x.length;i++)
+		{
+			if(num == text_position_x[i])	return true;
+		}
+		return false;
+	}
+	
+	function check_position_y(num)
+	{
+		var i;
+		for(i=0;i<text_position_y.length;i++)
+		{
+			if(num == text_position_y[i])	return true;
+		}
+		return false;
+	}
+	//Start Game
+	
+	$("#start_game").click(function()
+	{
+		window.clearInterval(snake_timer);
+		starting_game();
+	}); // Close Start_Game
+    
+    $("#exit_game").click(function()
+	{
+		window.close();
+	}); // Exit
+	
+	
+	
+	function end_game()
+	{
+		window.clearInterval(snake_timer);
+		$("#canvas").hide();
+	}
+	
+	function create_snake()
+	{
+		dir = "right";
+		snake_array = []; //Empty array to start with
+		for(var i = length-1; i>=0; i--)
+		{
+			//This will create a horizontal snake starting from the top left
+			snake_array.push({x: i, y:0});
+		}
+		head_x = snake_array[0].x;
+		head_y = snake_array[0].y;
+		snake_timer = setInterval(paint_snake,200);
+	}
+	
+	function paint_snake()
+	{
+		redraw_game();
+		position_snake();
+		for(var i = 0; i < snake_array.length; i++)
+		{
+			var c = snake_array[i];
+			ctx.fillStyle = "brown";
+			ctx.fillRect(c.x*15, c.y*15, 15, 15);
+			ctx.strokeStyle = "white";
+			ctx.strokeRect(c.x*15, c.y*15, 15, 15);
+		}
+	}
+	
+	function check_intersect()
+	{
+		for(var i=0;i<word.length;i++)
+		{
+			//alert("Sect "+head_x+" "+Math.floor(text_position_x[i]/15)+" "+(head_y+1)+" "+Math.floor(text_position_y[i]/15));
+			if((head_x == Math.floor(text_position_x[i]/15)) && (head_y+1 == Math.floor(text_position_y[i]/15)))
+			{
+				//alert("Sect "+head_x+" "+Math.floor(text_position_x[i]/15)+" "+(head_y+1)+" "+Math.floor(text_position_y[i]/15));
+				if(validate_result(word[level-1][i]) == true)
+				{
+					
+					word[level-1].splice(i,1);
+					text_position_x.splice(i,1);
+					text_position_y.splice(i,1);
+					snake_array.push({x:snake_array.length,y:0});
+				}
+				else
+				{	
+					if(complete_flag == false)	alert("Wrong Alphabet");
+					else complete_flag = false;
+				}
+			}
+		}
+		
+	}
+	function validate_result(x)
+	{
+		//alert(valid_w.length+" "+x+" "+valid_w[w_i]);
+		if((x == valid_w[w_i])&&(w_i == valid_w.length-1))
+		{
+			alert("Game completed - Starting next");
+			complete_flag = true;
+			window.clearInterval(snake_timer);
+			level++;
+			starting_game();
+			//return true;
+		}
+		if(x == valid_w[w_i])
+		{
+			w_i++;
+			//alert(w_i+" yes");
+			return true;
+		}
+		else return false;
+	}
+	function position_snake()
+	{
+		if(dir == "right")	head_x++;
+		else if(dir == "left")	head_x--;
+		else if(dir == "up")	head_y--;
+		else if(dir == "down")	head_y++;
+		//document.write(head_x);
+		if(head_x>=40)
+		{
+			head_x = 0;
+		}
+		if(head_x<0)
+		{
+			head_x = 40;
+		}
+		if(head_y>=34)
+		{
+			head_y = 0;
+		}
+		if(head_y<0)
+		{
+			head_y = 34;
+		}
+		check_intersect();
+		tail = snake_array.pop();
+		tail.x = head_x;
+		tail.y = head_y;
+		snake_array.unshift(tail);
+	}
+	$(document).keydown(function(e)
+	{
+		if ((e.keyCode == 37) && (dir != "right")) // Left Key Press
+		{ 
+			dir = "left";
+		}
+		else if ((e.keyCode == 38) && (dir != "down")) // Up Key Press
+		{ 
+			dir = "up";
+		}
+		else if ((e.keyCode == 39) && (dir != "left")) // Right Key Press
+		{ 
+			dir = "right";
+		}
+		else if ((e.keyCode == 40) && (dir != "up")) // Up Key Press
+		{ 
+			dir = "down";
+		}
+		if	(e.keyCode == 13)	// Handling Enter Key
+		{
+			//window.clearInterval(snake_timer);
+			//$("#canvas").show();
+			//init_game();
+			//create_snake();
+			//paint_snake();
+				
+		}
+	});// Close Key Handling
+		
+	$(document).mousedown(function(e)	
+	{
+		switch(e.which)
+		{
+			case 3:	alert("Sorry Right click is disabled");
+					break;
+		}
+	});
+		
+		
+});
+</script>
+</head>
+<body>
+<h1><center>Snake Game</center></h1><br>
+<canvas id="canvas" width="600" height="500"></canvas>
+<div id = "dashboard" style="width:200px;height:500px;background-color:#660066;position:absolute;top:100px;left:650px;">
+<br>
+<div id = "name_of_student">Hi Aditya</div>
+<div id = "level_of_game"></div>
+<div id = "score_of_player"></div>
+<div id = "time_by_player"></div>
+<br>
+&nbsp;&nbsp;<image id = "picture_of_alphabet" style="width:180px;height:180px;border:#660066"></div>
+</div>
+<div id = "buttons" style="width:110px;height:500px;background-color:#660066;position:absolute;top:100px;left:850px;">
+<br>
+<image id = "start_game" src = "start_game.jpg" style="width:100px;height:100px;margin-left:auto;margin-right:auto">
+</image><br><br>
+<image id = "exit_game" src = "exit_game.jpg" style="width:100px;height:100px;margin-left:auto;margin-right:auto">
+</image>
+
+</div>
+</body>
+</html>
